@@ -1,7 +1,7 @@
 """O texto é um conjunto de elementos organizados com sentido. No caso abaixo, os parágrafos estão “embaralhados”. Assinale a alternativa que traz a correta ordenação desses trechos tendo em vista a hierarquização das ideias ao longo do texto.
 Os perigos das mídias sociais e do vício em
 jogos eletrônicos
-A – Além disso, há uma clara relação entre o uso
+A - Além disso, há uma clara relação entre o uso
 excessivo de redes sociais, jogos violentos e aplicativos de filmes e séries com o surgimento de
 sintomas de depressão, ansiedade patológica, isolamento social e privação de sono. Na juventude,
 o excesso de tecnologia faz com que o indivíduo
