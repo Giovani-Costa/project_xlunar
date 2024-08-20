@@ -1,10 +1,19 @@
 import discord
+import disnake.utils
+import usuario
+import disnake
 from discord.ext.commands import Bot
 from discord import Interaction
 from questao import Questao
+from disnake.ext import commands
 from time import sleep
 
+from connect_database import criar_session
+
+
 xlunar = Bot(command_prefix="!", intents=discord.Intents.all())
+session = criar_session()
+CATEGORIA_ID_QUESTOES = 1273064071071137802
 
 
 @xlunar.event
@@ -29,9 +38,59 @@ async def teste(interaction: Interaction):
     name="registrar", description="Registra um usuário no banco de dados"
 )
 async def registrar(interaction: Interaction):
+    usuario_registro = interaction.user
+    discord_id = interaction.user.id
+    nome_exibicao = interaction.user.display_name
+    nome_usuario = interaction.user.name
+    if not usuario.ja_registrado(session, discord_id):
+        categoria_questao = disnake.utils.get(
+            interaction.guild.categories, id=CATEGORIA_ID_QUESTOES
+        )
+        canal_do_usuario = await interaction.guild.create_text_channel(
+            f"Chat de {interaction.user.display_name}",
+            category=categoria_questao,
+        )
+        usuario.registar(
+            session, discord_id, nome_exibicao, nome_usuario, canal_do_usuario.id
+        )
+        await canal_do_usuario.set_permissions(
+            usuario_registro,
+            view_channel=True,
+            manage_channels=True,
+            manage_permissions=True,
+        )
+        mensagem = f":white_check_mark:  **{nome_exibicao} foi registrado com sucesso!** Para você usar o XLunar com a melhor experiência possível, criamos um chat privado para você fazer suas anotações e resolver suas questões sozinho(a) ou com a companhia de alguém. Caso queira que alguém entre em seu chat, basta dar a permissão nas configurações do chat. Não recomendamos que mecha nas permissões já estabelecidas. Você pode customizar o nome do seu chat para ficar com você deseja, apenas não desrespeito nenhuma regra do servidor <#{canal_do_usuario.id}> :white_check_mark:"
+    else:
+        mensagem = f":x:  Não foi possível registrar: {nome_exibicao}. Verifique se esse usuário já não foi registrado. Se estiver encontrando problemas para registrar, crie um ticket e peça ajuda para um ADM. Para criar um ticket, use o comando /ticket.  :x:"
+
     await interaction.response.send_message(
-        "Trabaiano nisso :)",
+        mensagem,
         ephemeral=True,
+    )
+
+
+@xlunar.tree.command(
+    name="ticket",
+    description="Cria um chat para você ter uma conversa direta com um dos ADMs",
+)
+async def ticket(interaction: Interaction):
+    member = disnake.utils.find(
+        lambda m: m.id == interaction.id, interaction.guild.members
+    )
+    role = interaction.guild.get_role(1196836175063814156)
+    categoria_ticket = disnake.utils.get(
+        interaction.guild.categories, id=1196836176926093364
+    )
+    canal_ticket = await interaction.guild.create_text_channel(
+        f"Ticket de {interaction.user.display_name}",
+        category=categoria_ticket,
+    )
+    await canal_ticket.set_permissions(member, view_channel=True)
+    await interaction.response.send_message(
+        f"Seu ticket foi criado com sucesso! Clique aqui <#{canal_ticket.id}>"
+    )
+    await canal_ticket.send(
+        "Esse é o seu ticket. Faça sua pergunta e espere um ADM responder"
     )
 
 
@@ -97,21 +156,8 @@ class QuestaoView(discord.ui.View):
     name="questão", description="Manda uma questão aleatória do banco de dados"
 )
 async def questao(interaction: Interaction):
-    questao = Questao(
-        enunciado="Leia a tira e responda à questão. O pai de Mafalda reage com ironia ao “mundo doente” da filha. Entretanto, ocorre ruptura abrupta em sua opinião:",
-        alternativas=[
-            """Tragédia (texto 1).,
-Deslizamentos (texto 1).,
-Atingida (texto 2).,
-Grande volume de chuva (texto 2)."""
-        ],
-        alternativa_correta=0,
-        ano=2022,
-        semestre=2,
-        materia="Português",
-        numero=8,
-        imagem="https://cdn.discordapp.com/attachments/1197686074164662372/1212918467787751424/image.png?ex=662a4b99&is=6628fa19&hm=7bbe8764fff93ac41a8c659c94537d61b56ec4d519ce7903f3950ea0443373a7&",
-    )
+    discord_id = interaction.user.id
+    questao = usuario.coletar_questao(session, discord_id)
     view = QuestaoView(timeout=180, questao=questao)
     embed = discord.Embed(
         title=f"Questão {questao.numero} ({questao.ano}.{questao.semestre} - {questao.materia})",
@@ -119,7 +165,7 @@ Grande volume de chuva (texto 2)."""
         colour=discord.Colour.from_str("#ff5e8d"),
     )
 
-    embed.set_image(url=questao.imagem)
+    # embed.set_image(url=questao.imagem)
     embed.add_field(
         name="Enunciado",
         value=questao.enunciado,

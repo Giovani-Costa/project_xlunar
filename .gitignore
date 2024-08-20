@@ -2,3 +2,6 @@
 /provas_antigas
 /questoes.xlsx
 /__pycache__
+/.env
+/xlunar-token.json
+/secure-connect-xlunar.zip
