@@ -4,6 +4,7 @@ from typing import Optional
 class Questao:
     def __init__(
         self,
+        id: str,
         enunciado: str,
         alternativas: list[str],
         alternativa_correta: int,
@@ -13,7 +14,8 @@ class Questao:
         numero: int,
         imagem: Optional[str] = None,
     ) -> None:
-        self.enunciado = enunciado
+        self.id = id
+        self.enunciado = enunciado.replace("\\n", "\n")
         self.alternativas = alternativas
         self.alternativas_correta = alternativa_correta
         self.ano = ano

@@ -45,13 +45,14 @@ def coletar_questao(session, discord_id: int) -> Questao:
     id_questoes = [str(linha.id) for linha in tabela_id_questoes.all()]
     questoes_possiveis = id_questoes.copy()
     for questao_loop in questoes_acertadas:
-        questoes_possiveis.remove(questao_loop)
+        questoes_possiveis.remove(str(questao_loop))
 
     questao_escolhida = choice(questoes_possiveis)
     questao_db = session.execute(
         f"SELECT * FROM xlunar.questoes WHERE id={questao_escolhida} ALLOW FILTERING"
     ).one()
     questao = Questao(
+        questao_db.id,
         questao_db.enunciado,
         questao_db.alternativas,
         questao_db.alternativa_correta,
@@ -79,3 +80,35 @@ def ja_registrado(session, discord_id: int) -> bool:
         int(linha.discord_id) for linha in usuarios_registrados.all()
     ]
     return discord_id in usuarios_registrados
+
+
+def _enviar(session, coluna: str, discord_id: int, questao_id: str) -> str:
+    usuario_id = (
+        session.execute(
+            f"SELECT id FROM xlunar.usuarios WHERE discord_id = '{discord_id}' ALLOW FILTERING"
+        )
+        .one()
+        .id
+    )
+    session.execute(
+        f"UPDATE xlunar.usuarios SET {coluna} = {coluna} + [{questao_id}] WHERE id = {usuario_id}"
+    )
+    return usuario_id
+
+
+def enviar_para_acertadas(session, discord_id: int, questao_id: str) -> None:
+    usuario_id = _enviar(session, "questoes_acertadas", discord_id, questao_id)
+    pontuacao_atual = (
+        session.execute(
+            f"SELECT pontuacao FROM xlunar.usuarios WHERE id = {usuario_id}"
+        )
+        .one()
+        .pontuacao
+    )
+    session.execute(
+        f"UPDATE xlunar.usuarios SET pontuacao = {pontuacao_atual + 1} WHERE id = {usuario_id}"
+    )
+
+
+def enviar_para_erradas(session, discord_id: int, questao_id: str) -> None:
+    _enviar(session, "questoes_erradas", discord_id, questao_id)

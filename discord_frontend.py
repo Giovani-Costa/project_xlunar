@@ -26,10 +26,14 @@ async def on_ready():
     print("XLunar se apresentando para o serviço @v@")
 
 
-@xlunar.tree.command(name="teste", description="testeee")
-async def teste(interaction: Interaction):
+@xlunar.tree.command(name="rank", description="rank")
+async def rank(interaction: Interaction):
+    tabela_top_10 = session.execute(
+        "SELECT nome_exibicao FROM xlunar.usuarios ORDER BY pontuacao DESC LIMIT 10"
+    )
+    top_10 = [u.nome_exibicao for u in tabela_top_10.all()]
     await interaction.response.send_message(
-        """funcionando :)""",
+        f"{top_10}",
         ephemeral=True,
     )
 
@@ -107,6 +111,13 @@ class QuestaoView(discord.ui.View):
         else:
             return "Está errado"
 
+    @staticmethod
+    def _enviar(esta_correto: bool, discord_id: int, questao_id: str) -> None:
+        if esta_correto:
+            usuario.enviar_para_acertadas(session, discord_id, questao_id)
+        else:
+            usuario.enviar_para_erradas(session, discord_id, questao_id)
+
     @discord.ui.button(label="A", style=discord.ButtonStyle.gray)
     async def botao_a(self, interaction: Interaction, button: discord.ui.Button):
         if self.ja_respondido:
@@ -116,6 +127,7 @@ class QuestaoView(discord.ui.View):
         else:
             self.ja_respondido = True
             esta_correto = self.questao.responder(0)
+            self._enviar(esta_correto, interaction.user.id, self.questao.id)
             await interaction.response.send_message(self._mensagem(esta_correto))
 
     @discord.ui.button(label="B", style=discord.ButtonStyle.gray)
@@ -127,6 +139,7 @@ class QuestaoView(discord.ui.View):
         else:
             self.ja_respondido = True
             esta_correto = self.questao.responder(1)
+            self._enviar(esta_correto, interaction.user.id, self.questao.id)
             await interaction.response.send_message(self._mensagem(esta_correto))
 
     @discord.ui.button(label="C", style=discord.ButtonStyle.gray)
@@ -138,6 +151,7 @@ class QuestaoView(discord.ui.View):
         else:
             self.ja_respondido = True
             esta_correto = self.questao.responder(2)
+            self._enviar(esta_correto, interaction.user.id, self.questao.id)
             await interaction.response.send_message(self._mensagem(esta_correto))
 
     @discord.ui.button(label="D", style=discord.ButtonStyle.gray)
@@ -149,6 +163,7 @@ class QuestaoView(discord.ui.View):
         else:
             self.ja_respondido = True
             esta_correto = self.questao.responder(3)
+            self._enviar(esta_correto, interaction.user.id, self.questao.id)
             await interaction.response.send_message(self._mensagem(esta_correto))
 
 
@@ -164,23 +179,38 @@ async def questao(interaction: Interaction):
         description="",
         colour=discord.Colour.from_str("#ff5e8d"),
     )
-
-    # embed.set_image(url=questao.imagem)
+    if questao.imagem != "None":
+        embed.set_image(url=questao.imagem)
+    questao_separada = [
+        questao.enunciado[i : i + 1024] for i in range(0, len(questao.enunciado), 1024)
+    ]
     embed.add_field(
         name="Enunciado",
-        value=questao.enunciado,
+        value=questao_separada[0],
+        inline=False,
+    )
+    if len(questao_separada) > 1:
+        for pedaco in questao_separada[1:]:
+            embed.add_field(name="", value=pedaco, inline=False)
+
+    embed.add_field(
+        name="Alternativas",
+        value=f"A) {questao.alternativas[0]}",
         inline=False,
     )
     embed.add_field(
-        name="Alternativas",
-        value=f"\n\n".join(
-            [
-                f"{letra}) {alternativa}"
-                for letra, alternativa in zip(
-                    ["A", "B", "C", "D"], questao.alternativas
-                )
-            ]
-        ),
+        name="",
+        value=f"B) {questao.alternativas[1]}",
+        inline=False,
+    )
+    embed.add_field(
+        name="",
+        value=f"C) {questao.alternativas[2]}",
+        inline=False,
+    )
+    embed.add_field(
+        name="",
+        value=f"D) {questao.alternativas[3]}",
         inline=False,
     )
 
