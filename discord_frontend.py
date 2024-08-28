@@ -2,11 +2,13 @@ import discord
 import disnake.utils
 import usuario
 import disnake
+import pandas as pd
 from discord.ext.commands import Bot
 from discord import Interaction
 from questao import Questao
 from disnake.ext import commands
 from time import sleep
+
 
 from connect_database import criar_session
 
@@ -24,18 +26,6 @@ async def on_ready():
         status=discord.Status.do_not_disturb,
     )
     print("XLunar se apresentando para o serviço @v@")
-
-
-@xlunar.tree.command(name="rank", description="rank")
-async def rank(interaction: Interaction):
-    tabela_top_10 = session.execute(
-        "SELECT nome_exibicao FROM xlunar.usuarios ORDER BY pontuacao DESC LIMIT 10"
-    )
-    top_10 = [u.nome_exibicao for u in tabela_top_10.all()]
-    await interaction.response.send_message(
-        f"{top_10}",
-        ephemeral=True,
-    )
 
 
 @xlunar.tree.command(
@@ -269,3 +259,21 @@ async def questao(interaction: Interaction):
     )
 
     await interaction.response.send_message(embed=embed, view=view)
+
+
+@xlunar.tree.command(
+    name="rank",
+    description="rank",
+)
+async def rank(interaction: Interaction):
+    tabela_usuarios = session.execute(
+        "SELECT nome_exibicao, pontuacao FROM test_discord_bot.usuarios"
+    )
+    dados = [
+        {"nome_exibicao": linha.nome_exibicao, "pontuacao": linha.pontuacao}
+        for linha in tabela_usuarios.all()
+    ]
+    tabela_rank = pd.DataFrame(dados)
+    ordenada = tabela_rank.sort_values(by="pontuacao", ascending=False)
+    top_10 = ordenada["nome_exibicao"].head(10).to_list()
+    await interaction.response.send_message(f"{top_10}", ephemeral=True)
