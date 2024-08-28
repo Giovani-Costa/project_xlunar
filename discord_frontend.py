@@ -113,6 +113,7 @@ class QuestaoView(discord.ui.View):
 
     @staticmethod
     def _enviar(esta_correto: bool, discord_id: int, questao_id: str) -> None:
+        _set_fazendo_questao(discord_id, False)
         if esta_correto:
             usuario.enviar_para_acertadas(session, discord_id, questao_id)
         else:
@@ -167,11 +168,64 @@ class QuestaoView(discord.ui.View):
             await interaction.response.send_message(self._mensagem(esta_correto))
 
 
+def _selecionar_canal_id(discord_id: int) -> int:
+    canal_id = (
+        session.execute(
+            f"SELECT canal_id FROM test_discord_bot.usuarios WHERE discord_id='{discord_id}' ALLOW FILTERING"
+        )
+        .one()
+        .canal_id
+    )
+    return int(canal_id)
+
+
+def _selecionar_db_id(discord_id: int) -> str:
+    db_id = (
+        session.execute(
+            f"SELECT id FROM test_discord_bot.usuarios WHERE discord_id='{discord_id}' ALLOW FILTERING"
+        )
+        .one()
+        .id
+    )
+    return str(db_id)
+
+
+def _set_fazendo_questao(discord_id: int, valor: bool):
+    db_id = _selecionar_db_id(discord_id)
+    session.execute(
+        f"UPDATE test_discord_bot.usuarios SET fazendo_questao = {str(valor).lower()} WHERE id = {db_id}"
+    )
+
+
+def _get_fazendo_questao(discord_id: int) -> bool:
+    fazendo_questao = (
+        session.execute(
+            f"SELECT fazendo_questao FROM test_discord_bot.usuarios WHERE discord_id = '{discord_id}' ALLOW FILTERING"
+        )
+        .one()
+        .fazendo_questao
+    )
+    return fazendo_questao
+
+
 @xlunar.tree.command(
     name="questão", description="Manda uma questão aleatória do banco de dados"
 )
 async def questao(interaction: Interaction):
     discord_id = interaction.user.id
+    canal_id_usuario = _selecionar_canal_id(discord_id)
+    canal_id_atual = interaction.channel_id
+    if canal_id_atual != canal_id_usuario:
+        await interaction.response.send_message(
+            "Você só pode chamar esse comando em seu canal privado", ephemeral=True
+        )
+        return
+    if _get_fazendo_questao(discord_id):
+        await interaction.response.send_message(
+            "Termine a questão que você iniciou", ephemeral=True
+        )
+        return
+    _set_fazendo_questao(discord_id, True)
     questao = usuario.coletar_questao(session, discord_id)
     view = QuestaoView(timeout=180, questao=questao)
     embed = discord.Embed(

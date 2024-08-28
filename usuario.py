@@ -34,14 +34,14 @@ def quantia_erradas() -> int:
 def coletar_questao(session, discord_id: int) -> Questao:
     questoes_acertadas = (
         session.execute(
-            f"SELECT questoes_acertadas FROM xlunar.usuarios WHERE discord_id = '{discord_id}' ALLOW FILTERING"
+            f"SELECT questoes_acertadas FROM test_discord_bot.usuarios WHERE discord_id = '{discord_id}' ALLOW FILTERING"
         )
         .one()
         .questoes_acertadas
     )
     if questoes_acertadas is None:
         questoes_acertadas = []
-    tabela_id_questoes = session.execute("SELECT id FROM xlunar.questoes")
+    tabela_id_questoes = session.execute("SELECT id FROM test_discord_bot.questoes")
     id_questoes = [str(linha.id) for linha in tabela_id_questoes.all()]
     questoes_possiveis = id_questoes.copy()
     for questao_loop in questoes_acertadas:
@@ -49,7 +49,7 @@ def coletar_questao(session, discord_id: int) -> Questao:
 
     questao_escolhida = choice(questoes_possiveis)
     questao_db = session.execute(
-        f"SELECT * FROM xlunar.questoes WHERE id={questao_escolhida} ALLOW FILTERING"
+        f"SELECT * FROM test_discord_bot.questoes WHERE id={questao_escolhida} ALLOW FILTERING"
     ).one()
     questao = Questao(
         questao_db.id,
@@ -69,13 +69,15 @@ def registar(
     session, discord_id: int, nome_exibicao: str, nome_usuario: str, canal_id: int
 ) -> None:
     session.execute(
-        f"""INSERT INTO xlunar.usuarios (id, discord_id, nome_exibicao, nome_usuario, pontuacao, questoes_acertadas, questoes_erradas, canal_id)
-VALUES (uuid(), '{discord_id}', '{nome_exibicao}', '{nome_usuario}', 0, [], [], '{canal_id}');"""
+        f"""INSERT INTO test_discord_bot.usuarios (id, discord_id, nome_exibicao, nome_usuario, pontuacao, questoes_acertadas, questoes_erradas, canal_id, fazendo_questao)
+VALUES (uuid(), '{discord_id}', '{nome_exibicao}', '{nome_usuario}', 0, [], [], '{canal_id}', false);"""
     )
 
 
 def ja_registrado(session, discord_id: int) -> bool:
-    usuarios_registrados = session.execute("SELECT discord_id FROM xlunar.usuarios")
+    usuarios_registrados = session.execute(
+        "SELECT discord_id FROM test_discord_bot.usuarios"
+    )
     usuarios_registrados = [
         int(linha.discord_id) for linha in usuarios_registrados.all()
     ]
@@ -85,13 +87,13 @@ def ja_registrado(session, discord_id: int) -> bool:
 def _enviar(session, coluna: str, discord_id: int, questao_id: str) -> str:
     usuario_id = (
         session.execute(
-            f"SELECT id FROM xlunar.usuarios WHERE discord_id = '{discord_id}' ALLOW FILTERING"
+            f"SELECT id FROM test_discord_bot.usuarios WHERE discord_id = '{discord_id}' ALLOW FILTERING"
         )
         .one()
         .id
     )
     session.execute(
-        f"UPDATE xlunar.usuarios SET {coluna} = {coluna} + [{questao_id}] WHERE id = {usuario_id}"
+        f"UPDATE test_discord_bot.usuarios SET {coluna} = {coluna} + [{questao_id}] WHERE id = {usuario_id}"
     )
     return usuario_id
 
@@ -100,13 +102,13 @@ def enviar_para_acertadas(session, discord_id: int, questao_id: str) -> None:
     usuario_id = _enviar(session, "questoes_acertadas", discord_id, questao_id)
     pontuacao_atual = (
         session.execute(
-            f"SELECT pontuacao FROM xlunar.usuarios WHERE id = {usuario_id}"
+            f"SELECT pontuacao FROM test_discord_bot.usuarios WHERE id = {usuario_id}"
         )
         .one()
         .pontuacao
     )
     session.execute(
-        f"UPDATE xlunar.usuarios SET pontuacao = {pontuacao_atual + 1} WHERE id = {usuario_id}"
+        f"UPDATE test_discord_bot.usuarios SET pontuacao = {pontuacao_atual + 1} WHERE id = {usuario_id}"
     )
 
 
