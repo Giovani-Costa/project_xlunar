@@ -1,5 +1,9 @@
+from bot import XLunarBot
+from connect_database import criar_session
 from key import key
-from discord_frontend import xlunar
 
+session = criar_session()
 token = key.get("token")
-xlunar.run(token)
+xlunar = XLunarBot(token=token, session=session)
+
+xlunar.start()
