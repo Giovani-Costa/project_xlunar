@@ -1,21 +1,21 @@
-import discord
-import disnake.utils
-import usuario
-import disnake
-import pandas as pd
-from discord.ext.commands import Bot
-from discord import Interaction
-from questao import Questao
-from disnake.ext import commands
 from time import sleep
 
+import discord
+import disnake
+import disnake.utils
+import pandas as pd
+from discord import Interaction
+from discord.ext.commands import Bot
+from disnake.ext import commands
 
+import usuario
 from connect_database import criar_session
-
+from questao import Questao
 
 xlunar = Bot(command_prefix="!", intents=discord.Intents.all())
 session = criar_session()
 CATEGORIA_ID_QUESTOES = 1273064071071137802
+KEYSPACE = "xlunar"
 
 
 @xlunar.event
@@ -161,7 +161,7 @@ class QuestaoView(discord.ui.View):
 def _selecionar_canal_id(discord_id: int) -> int:
     canal_id = (
         session.execute(
-            f"SELECT canal_id FROM test_discord_bot.usuarios WHERE discord_id='{discord_id}' ALLOW FILTERING"
+            f"SELECT canal_id FROM {KEYSPACE}.usuarios WHERE discord_id='{discord_id}' ALLOW FILTERING"
         )
         .one()
         .canal_id
@@ -172,7 +172,7 @@ def _selecionar_canal_id(discord_id: int) -> int:
 def _selecionar_db_id(discord_id: int) -> str:
     db_id = (
         session.execute(
-            f"SELECT id FROM test_discord_bot.usuarios WHERE discord_id='{discord_id}' ALLOW FILTERING"
+            f"SELECT id FROM {KEYSPACE}.usuarios WHERE discord_id='{discord_id}' ALLOW FILTERING"
         )
         .one()
         .id
@@ -183,14 +183,14 @@ def _selecionar_db_id(discord_id: int) -> str:
 def _set_fazendo_questao(discord_id: int, valor: bool):
     db_id = _selecionar_db_id(discord_id)
     session.execute(
-        f"UPDATE test_discord_bot.usuarios SET fazendo_questao = {str(valor).lower()} WHERE id = {db_id}"
+        f"UPDATE {KEYSPACE}.usuarios SET fazendo_questao = {str(valor).lower()} WHERE id = {db_id}"
     )
 
 
 def _get_fazendo_questao(discord_id: int) -> bool:
     fazendo_questao = (
         session.execute(
-            f"SELECT fazendo_questao FROM test_discord_bot.usuarios WHERE discord_id = '{discord_id}' ALLOW FILTERING"
+            f"SELECT fazendo_questao FROM {KEYSPACE}.usuarios WHERE discord_id = '{discord_id}' ALLOW FILTERING"
         )
         .one()
         .fazendo_questao
@@ -267,7 +267,7 @@ async def questao(interaction: Interaction):
 )
 async def rank(interaction: Interaction):
     tabela_usuarios = session.execute(
-        "SELECT nome_exibicao, pontuacao FROM test_discord_bot.usuarios"
+        f"SELECT nome_exibicao, pontuacao FROM {KEYSPACE}.usuarios"
     )
     dados = [
         {"nome_exibicao": linha.nome_exibicao, "pontuacao": linha.pontuacao}
