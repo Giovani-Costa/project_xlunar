@@ -261,6 +261,62 @@ async def questao(interaction: Interaction):
     await interaction.response.send_message(embed=embed, view=view)
 
 
+class PaginaDoRank(discord.ui.View):
+    def __init__(
+        self,
+        usuarios: pd.DataFrame,
+        pagina_atual: int = 0,
+        *,
+        timeout: float | None = 180,
+    ):
+        super().__init__(timeout=timeout)
+        self.pagina_atual = pagina_atual
+        self.usuarios = usuarios
+
+    async def send(self, interaction: Interaction):
+        await interaction.response.send_message(view=self)
+
+    @discord.ui.button(label=">", style=discord.ButtonStyle.gray)
+    async def botao_proximo(self, interaction: Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        self.pagina_atual += 1
+        await self.atulizar_mensagem(interaction)
+
+    @discord.ui.button(label="<", style=discord.ButtonStyle.gray)
+    async def botao_anterior(self, interaction: Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        self.pagina_atual -= 1
+        await self.atulizar_mensagem(interaction)
+
+    @discord.ui.button(label="<<", style=discord.ButtonStyle.gray)
+    async def botao_primeiro(self, interaction: Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        self.pagina_atual = 0
+        await self.atulizar_mensagem(interaction)
+
+    @discord.ui.button(label=">>", style=discord.ButtonStyle.gray)
+    async def botao_ultimo(self, interaction: Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        self.pagina_atual = 9
+        await self.atulizar_mensagem(interaction)
+
+    def criar_embed(self) -> discord.Embed:
+        embed = discord.Embed(title="NOME DO USUARIO")
+        embed.add_field(
+            name="Nome", value=f"{self.usuarios.at[self.pagina_atual, 'nome_exibicao']}"
+        )
+        embed.add_field(
+            name="Pontuação",
+            value=f"{self.usuarios.at[self.pagina_atual, 'pontuacao']}",
+            inline=False,
+        )
+        return embed
+
+    async def atulizar_mensagem(self, interaction: Interaction):
+        embed = self.criar_embed()
+        await interaction.edit_original_response(embed=embed, view=self)
+
+
 @xlunar.tree.command(
     name="rank",
     description="rank",
@@ -274,6 +330,9 @@ async def rank(interaction: Interaction):
         for linha in tabela_usuarios.all()
     ]
     tabela_rank = pd.DataFrame(dados)
-    ordenada = tabela_rank.sort_values(by="pontuacao", ascending=False)
-    top_10 = ordenada["nome_exibicao"].head(10).to_list()
-    await interaction.response.send_message(f"{top_10}", ephemeral=True)
+    ordenada = tabela_rank.sort_values(by="pontuacao", ascending=False).reset_index(
+        drop=True
+    )
+    view = PaginaDoRank(ordenada)
+    view.send(interaction)
+    await interaction.response.send_message(view=view)
