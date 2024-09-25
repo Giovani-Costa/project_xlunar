@@ -1,3 +1,4 @@
+from random import choice
 from time import sleep
 
 import discord
@@ -89,17 +90,59 @@ async def ticket(interaction: Interaction):
 
 
 class QuestaoView(discord.ui.View):
-    def __init__(self, *, timeout: float | None = 180, questao: Questao):
-        super().__init__(timeout=timeout)
+    def __init__(self, *, questao: Questao):
+        super().__init__(timeout=600)
         self.ja_respondido = False
         self.questao = questao
 
     @staticmethod
     def _mensagem(esta_correto: bool) -> str:
         if esta_correto:
-            return "Está correto"
+            frase_motivacional = [
+                "Você acertou? Vou chamar o DETRAN, porque isso foi uma ultrapassagem de limite de inteligência!",
+                "Acertou! Parece que o Google interno funcionou direitinho!",
+                "Acertou na prova e agora pode oficialmente se sentir um gênio incompreendido!",
+                "Parabéns! Acertou a questão e ainda de quebra subiu o nível do universo!",
+                "Esse acerto foi tão bonito que merecia até uma moldura na parede!",
+                "Acertou? Cuidado, o cérebro pode pedir férias depois de tanto esforço!",
+                "Isso foi tão certeiro que nem a internet discada conseguiria atrapalhar!",
+                "Mandou bem! Agora só falta resolver o mistério de onde some a meia na máquina de lavar!",
+                "Você acertou? É oficial: o gabarito tá é com medo de você agora!",
+                "Com esse acerto, você já pode pedir música no Fantástico!",
+                "Acertou e sem precisar de tutorial no YouTube! Isso sim é poder!",
+                "Parabéns, esse acerto foi tão certeiro que até o professor deve ter dado um sorriso secreto!",
+                "Acertou a questão? Uau, acho que o universo até deu uma piscadinha de aprovação!",
+                "Seu acerto foi tão rápido que eu até pensei que tinha sido colado direto da fonte!",
+                "Acertou a questão e, de quebra, ganhou o direito de se achar um gênio por um dia!",
+                "Esse acerto foi tão perfeito que até o corretor automático ia aprovar!",
+                "Acertou? Vai com calma, ou daqui a pouco vão te contratar pra fazer o gabarito!",
+                "Com esse acerto, você desbloqueou o nível secreto: Mestre dos Acertos Aleatórios!",
+                "Você acertou a questão? Cuidado, ou vai acabar sendo confundido com uma calculadora humana!",
+                "Caramba! Acerto crítico no D20",
+                "Acertou miseravél",
+            ]
+            return f"**Está correto.** {choice(frase_motivacional)}"
         else:
-            return "Está errado"
+            frase_motivacional = [
+                "Parabéns, você acaba de descobrir uma nova maneira de não acertar essa questão!",
+                "Relaxa, até o gabarito erra às vezes (pelo menos é o que a gente quer acreditar)!",
+                "Se errar é humano, você está mais humano do que nunca!",
+                "Errar? Fácil. O difícil é passar por isso sem rir de si mesmo!",
+                "Mais uma questão errada? Calma, o importante é que você tá colecionando experiência!",
+                "Se errar fosse uma arte, você estaria expondo no Louvre!",
+                "Pensa pelo lado bom: errar a questão foi um jeito de garantir mais tempo estudando o assunto!",
+                "Errar é como café: quanto mais você toma, mais você acorda pra vida!",
+                "Se todo erro te faz mais forte, daqui a pouco você vai superar o Renato Cariani!",
+                "Errou? Sem problemas, você acabou de deixar o gabarito mais original!",
+                "Se você nunca errasse, eu começaria a achar que você é um robô. Então, parabéns pela humanidade!",
+                "Olha pelo lado bom: você tá dominando a arte de não acertar, e isso já é uma habilidade rara!",
+                "Pensa que o erro é tipo um tempero: dá mais sabor ao aprendizado... mesmo que seja apimentado!",
+                "Errar na prova é igual àquela piada sem graça: você se pergunta como chegou ali, mas logo dá risada!",
+                "Você pode ter errado a questão, mas com certeza ganhou uma nova habilidade em improvisar nas respostas!",
+                "O importante é manter o sorriso! Nem que seja pra disfarçar o nervoso...",
+                "Errou? Não é o fim do mundo! A Terra continua girando... embora eu saiba que a cabeça possa estar também!",
+            ]
+            return f"**Está errado.** {choice(frase_motivacional)}"
 
     @staticmethod
     def _enviar(esta_correto: bool, discord_id: int, questao_id: str) -> None:
@@ -310,6 +353,7 @@ class PaginaDoRank(discord.ui.View):
             value=f"{self.usuarios.at[self.pagina_atual, 'pontuacao']}",
             inline=False,
         )
+        embed.color
         return embed
 
     async def atulizar_mensagem(self, interaction: Interaction):
@@ -319,7 +363,8 @@ class PaginaDoRank(discord.ui.View):
 
 @xlunar.tree.command(
     name="rank",
-    description="rank",
+    description="Mostra o rank dos usuários (NÃO ESTÁ PRONTO)",
+    colour=discord.Colour.from_str("#ff5e8d"),
 )
 async def rank(interaction: Interaction):
     tabela_usuarios = session.execute(
@@ -336,3 +381,12 @@ async def rank(interaction: Interaction):
     view = PaginaDoRank(ordenada)
     view.send(interaction)
     await interaction.response.send_message(view=view)
+
+
+@xlunar.tree.command(
+    name="console",
+    description="Manda um comando direto pra o console do database",
+    colour=discord.Colour.from_str("#ff5e8d"),
+)
+async def rank(interaction: Interaction, comando: str):
+    pass
