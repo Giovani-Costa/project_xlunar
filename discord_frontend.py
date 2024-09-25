@@ -364,7 +364,6 @@ class PaginaDoRank(discord.ui.View):
 @xlunar.tree.command(
     name="rank",
     description="Mostra o rank dos usuários (NÃO ESTÁ PRONTO)",
-    colour=discord.Colour.from_str("#ff5e8d"),
 )
 async def rank(interaction: Interaction):
     tabela_usuarios = session.execute(
@@ -388,5 +387,5 @@ async def rank(interaction: Interaction):
     description="Manda um comando direto pra o console do database",
     colour=discord.Colour.from_str("#ff5e8d"),
 )
-async def rank(interaction: Interaction, comando: str):
+async def console(interaction: Interaction, comando: str):
     pass
