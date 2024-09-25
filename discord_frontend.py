@@ -385,7 +385,6 @@ async def rank(interaction: Interaction):
 @xlunar.tree.command(
     name="console",
     description="Manda um comando direto pra o console do database",
-    colour=discord.Colour.from_str("#ff5e8d"),
 )
 async def console(interaction: Interaction, comando: str):
     pass
