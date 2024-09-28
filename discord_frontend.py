@@ -90,8 +90,8 @@ async def ticket(interaction: Interaction):
 
 
 class QuestaoView(discord.ui.View):
-    def __init__(self, *, questao: Questao):
-        super().__init__(timeout=600)
+    def __init__(self, *, timeout=float | None, questao: Questao):
+        super().__init__(timeout)
         self.ja_respondido = False
         self.questao = questao
 
@@ -260,7 +260,7 @@ async def questao(interaction: Interaction):
         return
     _set_fazendo_questao(discord_id, True)
     questao = usuario.coletar_questao(session, discord_id)
-    view = QuestaoView(timeout=180, questao=questao)
+    view = QuestaoView(timeout=600, questao=questao)
     embed = discord.Embed(
         title=f"Questão {questao.numero} ({questao.ano}.{questao.semestre} - {questao.materia})",
         description="",
