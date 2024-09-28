@@ -91,7 +91,7 @@ async def ticket(interaction: Interaction):
 
 class QuestaoView(discord.ui.View):
     def __init__(self, *, timeout=float | None, questao: Questao):
-        super().__init__(timeout)
+        super().__init__(timeout=timeout)
         self.ja_respondido = False
         self.questao = questao
 
