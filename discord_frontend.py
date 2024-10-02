@@ -410,3 +410,29 @@ async def console(interaction: Interaction, comando: str):
         await interaction.response.send_message(
             "Você não tem permissão para usar esse comando"
         )
+
+
+@xlunar.tree.command(
+    name="mandar_questao",
+    description="Manda uma questão para o database",
+)
+async def mandar_questao(
+    interaction: Interaction,
+    numero: int,
+    ano: int,
+    semestre: int,
+    alternativas: str,
+    alternativa_correta: int,
+    materia: str,
+    enunciado: str,
+):
+    if interaction.user.id in ADMS:
+        link = f"https://raw.githubusercontent.com/Giovani-Costa/project_xlunar/main/imagens/{numero}_{semestre}_{ano}.png"
+        questao_nova = f"""INSERT INTO {KEYSPACE}.questoes (id, numero, ano, semestre, imagem, alternativas, alternativa_correta, materia, enunciado)
+VALUES (uuid(), {numero}, {ano}, {semestre}, '{link}', {alternativas.split("$")}, {alternativa_correta}, '{materia}', '{enunciado}');"""
+        session.execute(questao_nova)
+        await interaction.response.send_message("Comando realizado!")
+    else:
+        await interaction.response.send_message(
+            "Você não tem permissão para usar esse comando"
+        )
