@@ -1,11 +1,12 @@
 from random import choice
 from time import sleep
+from typing import Any, Coroutine, Optional
 
 import discord
 import disnake
 import disnake.utils
 import pandas as pd
-from discord import Interaction
+from discord import Interaction, app_commands
 from discord.ext.commands import Bot
 from disnake.ext import commands
 
@@ -17,6 +18,7 @@ xlunar = Bot(command_prefix="!", intents=discord.Intents.all())
 session = criar_session()
 CATEGORIA_ID_QUESTOES = 1273064071071137802
 KEYSPACE = "xlunar"
+ADMS = [334111824242802690, 766039963736866828]
 
 
 @xlunar.event
@@ -90,10 +92,24 @@ async def ticket(interaction: Interaction):
 
 
 class QuestaoView(discord.ui.View):
-    def __init__(self, *, timeout=float | None, questao: Questao):
+    def __init__(self, *, timeout=float | None, questao: Questao, discord_id: int):
         super().__init__(timeout=timeout)
         self.ja_respondido = False
         self.questao = questao
+        self.discord_id = discord_id
+
+    def on_timeout(self) -> Coroutine[Any, Any, None]:
+        db_id = (
+            session.execute(
+                f"SELECT id FROM xlunar.usuarios WHERE discord_id = '{self.discord_id}' ALLOW FILTERING"
+            )
+            .one()
+            .id
+        )
+        session.execute(
+            f"UPDATE xlunar.usuarios SET fazendo_questao = False WHERE id = {db_id}"
+        )
+        return super().on_timeout()
 
     @staticmethod
     def _mensagem(esta_correto: bool) -> str:
@@ -260,7 +276,7 @@ async def questao(interaction: Interaction):
         return
     _set_fazendo_questao(discord_id, True)
     questao = usuario.coletar_questao(session, discord_id)
-    view = QuestaoView(timeout=600, questao=questao)
+    view = QuestaoView(timeout=600, questao=questao, discord_id=discord_id)
     embed = discord.Embed(
         title=f"Questão {questao.numero} ({questao.ano}.{questao.semestre} - {questao.materia})",
         description="",
@@ -387,4 +403,10 @@ async def rank(interaction: Interaction):
     description="Manda um comando direto pra o console do database",
 )
 async def console(interaction: Interaction, comando: str):
-    pass
+    if interaction.user.id in ADMS:
+        session.execute(comando)
+        await interaction.response.send_message("Comando realizado!")
+    else:
+        await interaction.response.send_message(
+            "Você não tem permissão para usar esse comando"
+        )
